@@ -1,0 +1,109 @@
+﻿🧩 Concept Recap
+* MLflow Tracking lets you log experiments: model type, hyperparameters, metrics, and artifacts.
+* MLflow Model Registry acts as a central hub where you can store, version, and manage models.
+
+
+🧰 Tools / Libraries / Packages Required
+ToolPurposeInstallation CommandPython 3.xMain environmentPreinstalledMLflowExperiment tracking & model registrypip install mlflowScikit-learnFor sample modelpip install scikit-learnPandasFor dataset handlingpip install pandasJoblibFor model saving (optional)pip install joblib
+
+✅ Verify:
+mlflow --version
+
+
+
+🌱 Step 1: Create a Project Folder
+mkdir mlflow_experiment_tracking
+cd mlflow_experiment_tracking
+
+
+
+📦 Step 2: Write Your Python Code (mlflow_tracking.py)
+Create a file and paste this code inside 👇
+import mlflow
+import mlflow.sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.datasets import load_iris
+
+# Load dataset
+data = load_iris()
+X = data.data
+y = data.target
+
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Set experiment name (will create if not exists)
+mlflow.set_experiment("Iris_RF_Experiment")
+
+# Start MLflow run
+with mlflow.start_run(run_name="RF_Model_Run_1") as run:
+    # Define model and parameters
+    n_estimators = 100
+    max_depth = 3
+
+    model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
+    model.fit(X_train, y_train)
+
+    # Predictions
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+
+    # Log parameters and metrics
+    mlflow.log_param("n_estimators", n_estimators)
+    mlflow.log_param("max_depth", max_depth)
+    mlflow.log_metric("accuracy", acc)
+
+    # Log model
+    mlflow.sklearn.log_model(model, artifact_path="model", registered_model_name="Iris_RF_Model")
+
+    print(f"Model logged with accuracy: {acc:.3f}")
+    print(f"Run ID: {run.info.run_id}")
+
+
+
+⚙️ Step 3: Run the Script
+Run this from terminal:
+python3 mlflow_tracking.py
+It will:
+* Create an MLflow experiment named "Iris_RF_Experiment"
+* Log:
+o Parameters → n_estimators, max_depth
+o Metrics → accuracy
+o Model → Saved under artifacts
+* Register your model as "Iris_RF_Model" in the Model Registry
+
+
+🧭 Step 4: Launch the MLflow UI
+Run:
+mlflow ui
+Then open your browser → http://127.0.0.1:5000
+You'll see:
+* Experiment: Iris_RF_Experiment
+* Run Name: RF_Model_Run_1
+* Metrics, Params, and Model Artifacts
+* Under Models, you'll see Iris_RF_Model registered in the registry.
+
+💡 Step 5: Model Registry Verification
+In the MLflow UI, go to Models → Iris_RF_Model
+You'll see:
+* Version 1 (since we registered inside code)
+* Model artifacts (like model.pkl)
+* Status: "None" (no stage assigned yet - that's fine for now)
+
+
+🧠 Viva Questions & Answers
+QAQ1: What is MLflow used for?MLflow tracks ML experiments, logs metrics/parameters, and manages models through a registry.Q2: How many components does MLflow have?Four: Tracking, Projects, Models, and Model Registry.Q3: What is logged using mlflow.log_param() and mlflow.log_metric()?Parameters (hyperparameters) and metrics (like accuracy, loss, etc.).Q4: What does mlflow.sklearn.log_model() do?It saves the trained sklearn model as an artifact for later loading or deployment.Q5: How do you register a model into the Model Registry from code?Pass registered_model_name inside mlflow.sklearn.log_model().Q6: Where are experiment details stored?In the local folder mlruns/ (created automatically by MLflow).
+
+
+📂 Step 6: Folder Structure
+After execution, your folder will look like this:
+mlflow_experiment_tracking/
+│
+├── mlflow_tracking.py
+├── mlruns/
+│   └── 0/ (contains experiment runs)
+│
+└── (Model registry metadata)
+

@@ -1,0 +1,101 @@
+﻿🧰 Tools / Libraries / Packages Required
+ToolPurposeInstallation CommandPython 3.xFor running DVC(preinstalled in most setups)GitFor version controlsudo apt install git -yDVCMain tool for dataset versioningpip install dvcWgetTo download dataset from internetsudo apt install wget -y
+✅ Verify installations:
+git --version
+python --version
+dvc --version
+wget --version
+
+
+🌐 Step 1: Create a New Project Folder
+mkdir dvc_dataset_versioning
+cd dvc_dataset_versioning
+
+
+
+🌱 Step 2: Initialize Git Repository
+git init
+This creates a hidden .git/ folder to track code changes.
+
+
+⚙️ Step 3: Initialize DVC
+dvc init
+This creates:
+* .dvc/ folder → DVC configs
+* .dvcignore file → to ignore unnecessary files
+Commit this setup:
+git add .
+git commit -m "Initialized Git and DVC"
+
+
+
+📥 Step 4: Download a Dataset using wget
+We'll use a small public dataset - for example, the Iris dataset from UCI ML repo:
+mkdir data
+cd data
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data -O iris.csv
+cd ..
+Now you have data/iris.csv in your folder.
+
+
+📦 Step 5: Add Dataset to DVC Tracking
+dvc add data/iris.csv
+This:
+* Generates a file data/iris.csv.dvc
+* Removes iris.csv from Git tracking (it's large)
+* Keeps a hashed version managed by DVC
+Now commit:
+git add data/.gitignore data/iris.csv.dvc
+git commit -m "Added iris dataset to DVC tracking"
+
+
+
+☁️ Step 6: (Optional) Setup Remote Storage for DVC
+You can push data to remote storage like Google Drive, S3, or even a local folder.
+For simplicity, we'll make a local remote:
+mkdir ../dvc_remote
+dvc remote add -d myremote ../dvc_remote
+Commit config:
+git add .dvc/config
+git commit -m "Configured DVC remote storage"
+Push data:
+dvc push
+Your dataset is now stored in ../dvc_remote, and DVC keeps a checksum link in your repo.
+
+
+
+🧩 Step 7: Simulate Dataset Versioning
+Let's say you modify your dataset - maybe add a new row:
+echo "5.1,3.5,1.4,0.2,Iris-setosa" >> data/iris.csv
+Track and commit new version:
+dvc add data/iris.csv
+git add data/iris.csv.dvc
+git commit -m "Updated dataset with one new sample"
+dvc push
+Now you have version 2 of the dataset tracked with DVC!
+
+
+
+🔁 Step 8: How to Reproduce / Restore Older Version
+To get a previous version:
+git checkout <old_commit_id>
+dvc pull
+Boom - DVC automatically restores that version of the dataset from remote storage.
+
+🧠 Viva Questions & Answers
+QAQ1: What is DVC used for?It's a data version control tool that tracks datasets, models, and pipelines similar to how Git tracks code.Q2: Why not store data directly in Git?Git isn't meant for large files; DVC stores data separately and tracks metadata in Git.Q3: What is created when we run dvc add?A .dvc file containing metadata and a hash (checksum) of the data.Q4: What's the difference between git commit and dvc push?git commit saves code changes; dvc push saves large data to remote storage.Q5: How do we roll back to an old dataset?Checkout the older Git commit and run dvc pull to fetch the corresponding dataset version.
+
+
+🏁 Folder Structure at End
+dvc_dataset_versioning/
+│
+├── data/
+│   └── iris.csv
+│
+├── .dvc/
+│   └── config
+├── data/iris.csv.dvc
+├── .dvcignore
+├── .git/
+└── README.md (optional)
+

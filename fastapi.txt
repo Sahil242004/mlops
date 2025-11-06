@@ -1,0 +1,144 @@
+﻿🧩 Tools / Libraries / Packages Required
+ToolPurposeInstallation CommandPython 3.xProgramming environmentPreinstalledFastAPITo build REST APIpip install fastapiUvicornASGI server to run FastAPIpip install uvicornScikit-learnFor ML modelpip install scikit-learnJoblibTo save/load modelpip install joblibDockerTo containerize the appInstall from official Docker docs
+
+✅ Verify:
+python3 --version
+docker --version
+
+
+🧱 Step 1: Create Project Folder
+mkdir fastapi_docker_api
+cd fastapi_docker_api
+
+
+🧠 Step 2: Train and Save Model (train_model.py)
+This is just to create a simple trained model we'll serve later.
+# train_model.py
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+import joblib
+
+# Load dataset
+iris = load_iris()
+X = iris.data
+y = iris.target
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Save model
+joblib.dump(model, "iris_model.pkl")
+
+print("✅ Model trained and saved as iris_model.pkl")
+Run it:
+python3 train_model.py
+
+
+
+⚙️ Step 3: Create the FastAPI App (main.py)
+This file will define your API and endpoint for predictions.
+# main.py
+from fastapi import FastAPI
+from pydantic import BaseModel
+import joblib
+import numpy as np
+
+# Load trained model
+model = joblib.load("iris_model.pkl")
+
+# Initialize FastAPI app
+app = FastAPI(title="Iris Prediction API")
+
+# Define request body
+class IrisInput(BaseModel):
+    sepal_length: float
+    sepal_width: float
+    petal_length: float
+    petal_width: float
+
+@app.get("/")
+def home():
+    return {"message": "Welcome to Iris Prediction API"}
+
+@app.post("/predict")
+def predict(data: IrisInput):
+    features = np.array([[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]])
+    prediction = model.predict(features)[0]
+    return {"predicted_class": int(prediction)}
+
+
+
+
+
+⚡ Step 4: Run the API Locally
+Start your API:
+uvicorn main:app --reload
+Then open browser → http://127.0.0.1:8000
+Endpoints:
+* / → Welcome message
+* /predict → POST endpoint for predictions
+Try the interactive Swagger UI (auto-generated!):
+👉 http://127.0.0.1:8000/docs
+Example input in Swagger:
+{
+  "sepal_length": 5.1,
+  "sepal_width": 3.5,
+  "petal_length": 1.4,
+  "petal_width": 0.2
+}
+Response:
+{"predicted_class": 0}
+
+
+
+🐳 Step 5: Create Dockerfile
+This file defines the environment and steps to containerize the app.
+# Use official Python base image
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy everything to container
+COPY . .
+
+# Install dependencies
+RUN pip install fastapi uvicorn scikit-learn joblib
+
+# Expose the port FastAPI runs on
+EXPOSE 8000
+
+# Run the API
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+
+🧩 Step 6: Build the Docker Image
+docker build -t iris-fastapi-app .
+This will create a Docker image named iris-fastapi-app.
+
+🚀 Step 7: Run the Docker Container
+docker run -d -p 8000:8000 iris-fastapi-app
+Then visit:
+👉 http://127.0.0.1:8000/docs
+Boom 💥 - you just served your model through an API running inside a container.
+
+
+.
+
+🧠 Viva Questions & Answers
+QAQ1: What is FastAPI?A high-performance Python framework for building APIs.Q2: Why use FastAPI?It's fast, easy, auto-generates documentation (Swagger UI), and async-ready.Q3: What is Docker used for?To package and run applications in isolated containers.Q4: What command builds a Docker image?docker build -t <image_name> .Q5: What command runs a Docker container?docker run -p 8000:8000 <image_name>Q6: How do we test the FastAPI endpoint?Use Swagger UI at /docs or send POST requests via curl/Postman.Q7: What's the difference between an image and a container?Image = blueprint; Container = running instance of that image.Q8: What's the advantage of containerizing ML models?Portability, consistency, and easy deployment across environments.
+
+📂 Final Folder Structure
+fastapi_docker_api/
+│
+├── train_model.py
+├── iris_model.pkl
+├── main.py
+├── Dockerfile
+└── requirements.txt (optional)
+
